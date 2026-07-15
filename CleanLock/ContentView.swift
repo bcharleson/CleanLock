@@ -1,0 +1,172 @@
+import SwiftUI
+
+struct ContentView: View {
+    @EnvironmentObject private var session: CleaningSession
+    @Environment(\.scenePhase) private var scenePhase
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            Divider().opacity(0.35)
+            main
+            Divider().opacity(0.35)
+            footer
+        }
+        .background(Color(nsColor: .windowBackgroundColor))
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                session.refreshPermissions()
+            }
+        }
+        .onAppear {
+            session.refreshPermissions()
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 28, weight: .semibold))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 48, height: 48)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.accentColor.opacity(0.15))
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("CleanLock")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                Text("Sanitize your screen and keyboard safely")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(24)
+    }
+
+    private var main: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            permissionCard
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("How it works")
+                    .font(.headline)
+
+                FeatureRow(
+                    icon: "rectangle.inset.filled",
+                    title: "Black screen",
+                    detail: "Every display goes black so you can wipe the glass."
+                )
+                FeatureRow(
+                    icon: "keyboard",
+                    title: "Input locked",
+                    detail: "Keyboard and trackpad events are blocked until you unlock."
+                )
+                FeatureRow(
+                    icon: "hand.raised",
+                    title: "Hold \(session.unlockChordLabel) for 3s",
+                    detail: "Intentional unlock chord — random presses won’t exit."
+                )
+                FeatureRow(
+                    icon: "timer",
+                    title: "10-minute failsafe",
+                    detail: "Cleaning mode always ends on its own if you forget."
+                )
+            }
+
+            if let error = session.lastError {
+                Text(error)
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Button {
+                session.startCleaning()
+            } label: {
+                Text(session.isCleaning ? "Cleaning…" : "Start Cleaning Mode")
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .disabled(session.isCleaning)
+            .keyboardShortcut(.defaultAction)
+        }
+        .padding(24)
+    }
+
+    private var permissionCard: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: session.permissionGranted ? "checkmark.shield.fill" : "exclamationmark.shield.fill")
+                .font(.title2)
+                .foregroundStyle(session.permissionGranted ? Color.accentColor : .orange)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(session.permissionGranted ? "Accessibility granted" : "Accessibility required")
+                    .font(.headline)
+                Text(
+                    session.permissionGranted
+                        ? "CleanLock can intercept input while cleaning mode is active. Events stay on-device and are never logged."
+                        : "macOS needs Accessibility permission so CleanLock can temporarily block the keyboard and trackpad."
+                )
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+                if !session.permissionGranted {
+                    Button("Open System Settings") {
+                        session.requestPermissions()
+                    }
+                    .buttonStyle(.link)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.primary.opacity(0.04))
+        )
+    }
+
+    private var footer: some View {
+        HStack {
+            Text("Open source · MIT")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+            Spacer()
+            Text("⌃⌘C to start")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .monospaced()
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+    }
+}
+
+private struct FeatureRow: View {
+    let icon: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: icon)
+                .frame(width: 22)
+                .foregroundStyle(Color.accentColor)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+}

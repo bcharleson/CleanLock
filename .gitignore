@@ -1,0 +1,32 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdata/
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Generated
+CleanLock.xcodeproj/
+*.xcworkspace/
+!default.xcworkspace
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# SwiftPM
+.build/
+.swiftpm/
+
+# Releases / local packaging
+dist/
+build-release/
+build/
+*.dmg
+*.app.zip
+*.app
