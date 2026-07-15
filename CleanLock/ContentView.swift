@@ -180,11 +180,21 @@ struct ContentView: View {
     }
 
     private var footer: some View {
-        HStack {
-            Text("Open source · MIT")
+        HStack(spacing: 10) {
+            Link("𝕏 \(AboutPanel.xHandle)", destination: AboutPanel.xProfileURL)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text("·")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
+
+            Text("MIT")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+
             Spacer()
+
             Text("⌃⌘C to start")
                 .font(.caption)
                 .foregroundStyle(.tertiary)

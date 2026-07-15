@@ -18,6 +18,11 @@ struct CleanLockApp: App {
         .defaultSize(width: Self.windowSize.width, height: Self.windowSize.height)
         .commands {
             CommandGroup(replacing: .newItem) {}
+            CommandGroup(replacing: .appInfo) {
+                Button("About CleanLock") {
+                    AboutPanel.show()
+                }
+            }
             CommandMenu("Cleaning") {
                 Button("Start Cleaning Mode") {
                     session.startCleaning()
