@@ -47,7 +47,7 @@ Or package a signed Release build:
 
 ```bash
 ./scripts/release.sh
-# artifacts land in dist/CleanLock-1.1.0.{dmg,zip}
+# artifacts land in dist/CleanLock-1.1.1.{dmg,zip}
 ```
 
 ## Usage

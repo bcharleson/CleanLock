@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
@@ -12,6 +13,7 @@ struct ContentView: View {
             Divider().opacity(0.35)
             footer
         }
+        .frame(width: CleanLockApp.windowSize.width, height: CleanLockApp.windowSize.height)
         .background(Color(nsColor: .windowBackgroundColor))
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
@@ -20,6 +22,21 @@ struct ContentView: View {
         }
         .onAppear {
             session.refreshPermissions()
+            lockWindowSize()
+        }
+    }
+
+    /// Disable zoom/resize so the window stays at the designed fixed size.
+    private func lockWindowSize() {
+        DispatchQueue.main.async {
+            guard let window = NSApplication.shared.windows.first(where: {
+                $0.contentView?.subviews.isEmpty == false
+            }) else { return }
+            let size = CleanLockApp.windowSize
+            window.styleMask.remove(.resizable)
+            window.setContentSize(size)
+            window.minSize = size
+            window.maxSize = size
         }
     }
 
