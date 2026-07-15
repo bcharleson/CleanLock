@@ -13,7 +13,7 @@ Existing tools (MacScrub, macPause, KeepClean, TapLock) already solve this well.
 | Black overlay | Full-screen on every connected display |
 | Input lock | Keyboard, trackpad, mouse, scroll, media keys via `CGEvent` tap |
 | Unlock | Hold ⌘ + ⌥ + ⌃ for 3 seconds (progress ring) |
-| Failsafe | Auto-unlock after 10 minutes |
+| Failsafe | Configurable auto-unlock (1 / 3 / 5 / 10 minutes) |
 | Privacy | No network, no analytics, no accounts — events never leave the device |
 
 ## Requirements
@@ -47,7 +47,7 @@ Or package a signed Release build:
 
 ```bash
 ./scripts/release.sh
-# artifacts land in dist/CleanLock-1.0.0.{dmg,zip}
+# artifacts land in dist/CleanLock-1.1.0.{dmg,zip}
 ```
 
 ## Usage
@@ -58,9 +58,11 @@ Or package a signed Release build:
 4. Wipe the screen / keyboard / trackpad.
 5. Hold **⌘ ⌥ ⌃** for 3 seconds to unlock.
 
+Before starting, pick an **Auto-unlock after** duration (1, 3, 5, or 10 minutes) so you aren’t stuck longer than you want.
+
 Emergency escapes if something goes wrong:
 
-- Wait for the 10-minute failsafe, or
+- Wait for the configured failsafe, or
 - Force Quit via the Apple menu / Activity Monitor (power button still works at the hardware level).
 
 ## How it works

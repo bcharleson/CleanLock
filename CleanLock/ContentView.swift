@@ -50,6 +50,8 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 20) {
             permissionCard
 
+            failsafePicker
+
             VStack(alignment: .leading, spacing: 10) {
                 Text("How it works")
                     .font(.headline)
@@ -71,8 +73,8 @@ struct ContentView: View {
                 )
                 FeatureRow(
                     icon: "timer",
-                    title: "10-minute failsafe",
-                    detail: "Cleaning mode always ends on its own if you forget."
+                    title: "Auto-unlock failsafe",
+                    detail: "Ends on its own after \(session.failsafeDuration.label) if you forget the chord."
                 )
             }
 
@@ -97,6 +99,33 @@ struct ContentView: View {
             .keyboardShortcut(.defaultAction)
         }
         .padding(24)
+    }
+
+    private var failsafePicker: some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Auto-unlock after")
+                    .font(.headline)
+                Text("Safety net so you can’t stay locked out.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            Picker("", selection: $session.failsafeDuration) {
+                ForEach(FailsafeDuration.allCases) { duration in
+                    Text(duration.label).tag(duration)
+                }
+            }
+            .labelsHidden()
+            .pickerStyle(.menu)
+            .frame(minWidth: 120)
+            .disabled(session.isCleaning)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.primary.opacity(0.04))
+        )
     }
 
     private var permissionCard: some View {

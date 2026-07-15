@@ -13,15 +13,13 @@ final class InputBlocker {
     /// Seconds the unlock chord must be held continuously.
     static let unlockHoldDuration: TimeInterval = 3.0
 
-    /// Absolute failsafe — cleaning always ends after this many seconds.
-    static let failsafeDuration: TimeInterval = 10 * 60
-
     private var eventTap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var unlockHoldStartedAt: Date?
     private var unlockTickTimer: Timer?
     private var failsafeTimer: Timer?
     private var chordCurrentlyHeld = false
+    private var failsafeDuration: TimeInterval = FailsafeDuration.default.seconds
 
     var requiredFlags: CGEventFlags = InputBlocker.defaultUnlockFlags
     var onUnlockProgress: ((Double) -> Void)?
@@ -29,8 +27,9 @@ final class InputBlocker {
 
     private(set) var isBlocking = false
 
-    func start() -> Bool {
+    func start(failsafeDuration: TimeInterval = FailsafeDuration.default.seconds) -> Bool {
         guard !isBlocking else { return true }
+        self.failsafeDuration = max(15, failsafeDuration)
 
         let mask = Self.eventMask
         let callback: CGEventTapCallBack = { _, type, event, refcon in
@@ -162,7 +161,7 @@ final class InputBlocker {
 
     private func startFailsafeTimer() {
         failsafeTimer?.invalidate()
-        failsafeTimer = Timer.scheduledTimer(withTimeInterval: Self.failsafeDuration, repeats: false) { [weak self] _ in
+        failsafeTimer = Timer.scheduledTimer(withTimeInterval: failsafeDuration, repeats: false) { [weak self] _ in
             DispatchQueue.main.async {
                 self?.onUnlocked?()
             }

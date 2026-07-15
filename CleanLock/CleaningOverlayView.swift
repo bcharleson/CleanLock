@@ -49,7 +49,7 @@ struct CleaningOverlayView: View {
                         .fill(.white.opacity(0.06))
                 )
 
-                Text("Auto-unlocks after 10 minutes as a failsafe")
+                Text("Auto-unlocks after \(session.failsafeDuration.overlayLabel) as a failsafe")
                     .font(.system(size: 11, weight: .regular, design: .rounded))
                     .foregroundStyle(.white.opacity(0.28))
                     .padding(.top, 8)

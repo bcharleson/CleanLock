@@ -6,10 +6,17 @@ import SwiftUI
 
 @MainActor
 final class CleaningSession: ObservableObject {
+    private static let failsafeDefaultsKey = "failsafeDurationSeconds"
+
     @Published private(set) var isCleaning = false
     @Published private(set) var unlockProgress: Double = 0
     @Published private(set) var permissionGranted = Permissions.accessibilityStatus() == .granted
     @Published var lastError: String?
+    @Published var failsafeDuration: FailsafeDuration {
+        didSet {
+            UserDefaults.standard.set(failsafeDuration.rawValue, forKey: Self.failsafeDefaultsKey)
+        }
+    }
 
     private let blocker = InputBlocker()
     private var overlayController: OverlayController?
@@ -18,6 +25,9 @@ final class CleaningSession: ObservableObject {
     var unlockChordLabel: String { "⌘ ⌥ ⌃" }
 
     init() {
+        let saved = UserDefaults.standard.integer(forKey: Self.failsafeDefaultsKey)
+        failsafeDuration = FailsafeDuration(rawValue: saved) ?? .default
+
         blocker.onUnlockProgress = { [weak self] progress in
             Task { @MainActor in
                 self?.unlockProgress = progress
@@ -36,7 +46,6 @@ final class CleaningSession: ObservableObject {
 
     func requestPermissions() {
         _ = Permissions.requestAccessibility(openSettingsIfDenied: true)
-        // Give System Settings a moment; user may grant and return.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.refreshPermissions()
         }
@@ -53,7 +62,7 @@ final class CleaningSession: ObservableObject {
         guard !isCleaning else { return }
 
         blocker.requiredFlags = InputBlocker.defaultUnlockFlags
-        guard blocker.start() else {
+        guard blocker.start(failsafeDuration: failsafeDuration.seconds) else {
             lastError = "Could not create an input event tap. Check Accessibility permission, then try again."
             return
         }
@@ -65,7 +74,6 @@ final class CleaningSession: ObservableObject {
         isCleaning = true
         lastError = nil
 
-        // Hide cursor while cleaning — less visual noise on a black screen.
         NSCursor.hide()
     }
 
