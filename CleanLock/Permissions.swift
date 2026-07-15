@@ -1,7 +1,6 @@
 import ApplicationServices
 import AppKit
 import Foundation
-import IOKit.hid
 
 enum PermissionStatus {
     case granted
@@ -9,77 +8,41 @@ enum PermissionStatus {
 }
 
 enum Permissions {
-    /// Accessibility is required for CGEvent taps that suppress input.
+    /// Accessibility is the permission CleanLock needs to create a blocking event tap.
     static func accessibilityStatus() -> PermissionStatus {
         AXIsProcessTrusted() ? .granted : .denied
     }
 
-    /// Input Monitoring (Listen Event) is required on modern macOS for global event taps.
-    static func inputMonitoringStatus() -> PermissionStatus {
-        if #available(macOS 10.15, *) {
-            return IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted
-                ? .granted
-                : .denied
+    /// True when we can create the kind of tap cleaning mode uses.
+    /// More reliable than TCC UI state after reinstalls / multiple app copies.
+    static func canCreateBlockingEventTap() -> Bool {
+        let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.flagsChanged.rawValue)
+        guard let tap = CGEvent.tapCreate(
+            tap: .cgSessionEventTap,
+            place: .headInsertEventTap,
+            options: .defaultTap,
+            eventsOfInterest: mask,
+            callback: { _, _, event, _ in Unmanaged.passUnretained(event) },
+            userInfo: nil
+        ) else {
+            return false
         }
-        return .granted
+        CGEvent.tapEnable(tap: tap, enable: false)
+        return true
     }
 
-    static var allRequiredGranted: Bool {
-        accessibilityStatus() == .granted && inputMonitoringStatus() == .granted
+    /// Ready to clean when Accessibility trusts us *or* a blocking tap can be created.
+    static var isReadyForCleaning: Bool {
+        accessibilityStatus() == .granted || canCreateBlockingEventTap()
     }
 
-    /// Prompts for Accessibility and opens System Settings if still denied.
-    @discardableResult
-    static func requestAccessibility(openSettingsIfDenied: Bool = true) -> PermissionStatus {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
-        let trusted = AXIsProcessTrustedWithOptions(options)
-        if trusted {
-            return .granted
-        }
-        if openSettingsIfDenied {
-            openAccessibilitySettings()
-        }
-        return .denied
-    }
-
-    /// Requests Input Monitoring; opens Settings when the user still needs to enable it.
-    @discardableResult
-    static func requestInputMonitoring(openSettingsIfDenied: Bool = true) -> PermissionStatus {
-        if inputMonitoringStatus() == .granted {
-            return .granted
-        }
-        if #available(macOS 10.15, *) {
-            _ = IOHIDRequestAccess(kIOHIDRequestTypeListenEvent)
-        }
-        if inputMonitoringStatus() == .granted {
-            return .granted
-        }
-        if openSettingsIfDenied {
-            openInputMonitoringSettings()
-        }
-        return .denied
-    }
-
-    static func requestAll(openSettingsIfDenied: Bool = true) {
-        if accessibilityStatus() != .granted {
-            _ = requestAccessibility(openSettingsIfDenied: openSettingsIfDenied)
-            return
-        }
-        if inputMonitoringStatus() != .granted {
-            _ = requestInputMonitoring(openSettingsIfDenied: openSettingsIfDenied)
-        }
-    }
-
+    /// Opens Accessibility settings only — does not show the system AX prompt dialog.
+    /// (Repeated AX prompts are easy to Deny and leave permissions stuck.)
     static func openAccessibilitySettings() {
         openPrivacySettings(anchor: "Privacy_Accessibility")
     }
 
-    static func openInputMonitoringSettings() {
-        openPrivacySettings(anchor: "Privacy_ListenEvent")
-    }
-
     private static func openPrivacySettings(anchor: String) {
-        // Prefer modern Settings deep link; fall back to legacy pane URL.
         let candidates = [
             "x-apple.systempreferences:com.apple.preference.security?\(anchor)",
             "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?\(anchor)",

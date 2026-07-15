@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-VERSION="${VERSION:-1.1.2}"
+VERSION="${VERSION:-1.1.3}"
 TEAM_ID="${TEAM_ID:-CC989JZCNV}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Brandon Charleson (CC989JZCNV)}"
 NOTARY_PROFILE="${NOTARY_PROFILE:-}"

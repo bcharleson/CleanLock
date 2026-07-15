@@ -11,7 +11,7 @@ final class CleaningSession: ObservableObject {
     @Published private(set) var isCleaning = false
     @Published private(set) var unlockProgress: Double = 0
     @Published private(set) var accessibilityGranted = false
-    @Published private(set) var inputMonitoringGranted = false
+    @Published private(set) var eventTapReady = false
     @Published var lastError: String?
     @Published var failsafeDuration: FailsafeDuration {
         didSet {
@@ -23,10 +23,9 @@ final class CleaningSession: ObservableObject {
     private var overlayController: OverlayController?
     private var permissionPollTimer: Timer?
 
-    /// Both TCC permissions required for cleaning mode.
-    var permissionGranted: Bool { accessibilityGranted && inputMonitoringGranted }
+    /// Cleaning is allowed when Accessibility trusts this process or a blocking tap works.
+    var permissionGranted: Bool { accessibilityGranted || eventTapReady }
 
-    /// Human-readable unlock chord for the UI.
     var unlockChordLabel: String { "⌘ ⌥ ⌃" }
 
     init() {
@@ -48,14 +47,13 @@ final class CleaningSession: ObservableObject {
 
     func refreshPermissions() {
         accessibilityGranted = Permissions.accessibilityStatus() == .granted
-        inputMonitoringGranted = Permissions.inputMonitoringStatus() == .granted
+        eventTapReady = Permissions.canCreateBlockingEventTap()
         if permissionGranted {
             lastError = nil
             stopPermissionPolling()
         }
     }
 
-    /// Keep checking after the user toggles Settings — TCC can lag until relaunch.
     func startPermissionPolling() {
         stopPermissionPolling()
         permissionPollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -71,33 +69,34 @@ final class CleaningSession: ObservableObject {
     }
 
     func requestPermissions() {
-        Permissions.requestAll(openSettingsIfDenied: true)
+        // Do not call AXIsProcessTrustedWithOptions(prompt: true) — that dialog is easy to
+        // Deny and makes TCC worse. Send the user to Settings instead.
+        Permissions.openAccessibilitySettings()
         refreshPermissions()
         startPermissionPolling()
-
         if !permissionGranted {
-            lastError = missingPermissionMessage()
+            lastError = "Turn on CleanLock under Privacy & Security → Accessibility, then quit with ⌘Q and reopen from /Applications."
         }
     }
 
     func startCleaning() {
         refreshPermissions()
-        guard permissionGranted else {
-            requestPermissions()
-            lastError = missingPermissionMessage()
-            return
-        }
 
+        // Always attempt the tap — TCC UI can lag behind reality after a relaunch.
         guard !isCleaning else { return }
 
         blocker.requiredFlags = InputBlocker.defaultUnlockFlags
         guard blocker.start(failsafeDuration: failsafeDuration.seconds) else {
-            // Tap creation often fails when Input Monitoring was granted but the process
-            // hasn't been restarted yet.
-            lastError = "Could not lock input. Quit CleanLock completely (⌘Q) and reopen it, then try again."
-            startPermissionPolling()
+            requestPermissions()
+            lastError = "macOS blocked the input lock. Enable CleanLock in Accessibility, quit (⌘Q), reopen /Applications/CleanLock, then try again."
+            accessibilityGranted = false
+            eventTapReady = false
             return
         }
+
+        // Tap succeeded — treat permissions as granted even if AXIsProcessTrusted lagged.
+        accessibilityGranted = true
+        eventTapReady = true
 
         let controller = OverlayController(session: self)
         controller.show()
@@ -105,6 +104,7 @@ final class CleaningSession: ObservableObject {
         unlockProgress = 0
         isCleaning = true
         lastError = nil
+        stopPermissionPolling()
 
         NSCursor.hide()
     }
@@ -123,15 +123,5 @@ final class CleaningSession: ObservableObject {
         unlockProgress = 0
         NSCursor.unhide()
         NSApp.activate(ignoringOtherApps: true)
-    }
-
-    private func missingPermissionMessage() -> String {
-        if !accessibilityGranted && !inputMonitoringGranted {
-            return "Enable Accessibility and Input Monitoring for CleanLock, then quit (⌘Q) and reopen the app."
-        }
-        if !accessibilityGranted {
-            return "Enable Accessibility for CleanLock, then quit (⌘Q) and reopen the app."
-        }
-        return "Enable Input Monitoring for CleanLock, then quit (⌘Q) and reopen the app."
     }
 }
