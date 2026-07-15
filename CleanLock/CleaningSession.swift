@@ -10,7 +10,8 @@ final class CleaningSession: ObservableObject {
 
     @Published private(set) var isCleaning = false
     @Published private(set) var unlockProgress: Double = 0
-    @Published private(set) var permissionGranted = Permissions.accessibilityStatus() == .granted
+    @Published private(set) var accessibilityGranted = false
+    @Published private(set) var inputMonitoringGranted = false
     @Published var lastError: String?
     @Published var failsafeDuration: FailsafeDuration {
         didSet {
@@ -20,6 +21,10 @@ final class CleaningSession: ObservableObject {
 
     private let blocker = InputBlocker()
     private var overlayController: OverlayController?
+    private var permissionPollTimer: Timer?
+
+    /// Both TCC permissions required for cleaning mode.
+    var permissionGranted: Bool { accessibilityGranted && inputMonitoringGranted }
 
     /// Human-readable unlock chord for the UI.
     var unlockChordLabel: String { "⌘ ⌥ ⌃" }
@@ -27,6 +32,7 @@ final class CleaningSession: ObservableObject {
     init() {
         let saved = UserDefaults.standard.integer(forKey: Self.failsafeDefaultsKey)
         failsafeDuration = FailsafeDuration(rawValue: saved) ?? .default
+        refreshPermissions()
 
         blocker.onUnlockProgress = { [weak self] progress in
             Task { @MainActor in
@@ -41,13 +47,36 @@ final class CleaningSession: ObservableObject {
     }
 
     func refreshPermissions() {
-        permissionGranted = Permissions.accessibilityStatus() == .granted
+        accessibilityGranted = Permissions.accessibilityStatus() == .granted
+        inputMonitoringGranted = Permissions.inputMonitoringStatus() == .granted
+        if permissionGranted {
+            lastError = nil
+            stopPermissionPolling()
+        }
+    }
+
+    /// Keep checking after the user toggles Settings — TCC can lag until relaunch.
+    func startPermissionPolling() {
+        stopPermissionPolling()
+        permissionPollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.refreshPermissions()
+            }
+        }
+    }
+
+    func stopPermissionPolling() {
+        permissionPollTimer?.invalidate()
+        permissionPollTimer = nil
     }
 
     func requestPermissions() {
-        _ = Permissions.requestAccessibility(openSettingsIfDenied: true)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.refreshPermissions()
+        Permissions.requestAll(openSettingsIfDenied: true)
+        refreshPermissions()
+        startPermissionPolling()
+
+        if !permissionGranted {
+            lastError = missingPermissionMessage()
         }
     }
 
@@ -55,7 +84,7 @@ final class CleaningSession: ObservableObject {
         refreshPermissions()
         guard permissionGranted else {
             requestPermissions()
-            lastError = "Accessibility permission is required to lock the keyboard and trackpad."
+            lastError = missingPermissionMessage()
             return
         }
 
@@ -63,7 +92,10 @@ final class CleaningSession: ObservableObject {
 
         blocker.requiredFlags = InputBlocker.defaultUnlockFlags
         guard blocker.start(failsafeDuration: failsafeDuration.seconds) else {
-            lastError = "Could not create an input event tap. Check Accessibility permission, then try again."
+            // Tap creation often fails when Input Monitoring was granted but the process
+            // hasn't been restarted yet.
+            lastError = "Could not lock input. Quit CleanLock completely (⌘Q) and reopen it, then try again."
+            startPermissionPolling()
             return
         }
 
@@ -91,5 +123,15 @@ final class CleaningSession: ObservableObject {
         unlockProgress = 0
         NSCursor.unhide()
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func missingPermissionMessage() -> String {
+        if !accessibilityGranted && !inputMonitoringGranted {
+            return "Enable Accessibility and Input Monitoring for CleanLock, then quit (⌘Q) and reopen the app."
+        }
+        if !accessibilityGranted {
+            return "Enable Accessibility for CleanLock, then quit (⌘Q) and reopen the app."
+        }
+        return "Enable Input Monitoring for CleanLock, then quit (⌘Q) and reopen the app."
     }
 }

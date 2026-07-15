@@ -18,10 +18,16 @@ struct ContentView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 session.refreshPermissions()
+                if !session.permissionGranted {
+                    session.startPermissionPolling()
+                }
             }
         }
         .onAppear {
             session.refreshPermissions()
+            if !session.permissionGranted {
+                session.startPermissionPolling()
+            }
             lockWindowSize()
         }
     }
@@ -151,23 +157,46 @@ struct ContentView: View {
                 .font(.title2)
                 .foregroundStyle(session.permissionGranted ? Color.accentColor : .orange)
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(session.permissionGranted ? "Accessibility granted" : "Accessibility required")
+            VStack(alignment: .leading, spacing: 8) {
+                Text(session.permissionGranted ? "Permissions granted" : "Permissions required")
                     .font(.headline)
+
                 Text(
                     session.permissionGranted
                         ? "CleanLock can intercept input while cleaning mode is active. Events stay on-device and are never logged."
-                        : "macOS needs Accessibility permission so CleanLock can temporarily block the keyboard and trackpad."
+                        : "macOS needs Accessibility and Input Monitoring. After enabling both, fully quit CleanLock (⌘Q) and reopen it."
                 )
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+                VStack(alignment: .leading, spacing: 4) {
+                    PermissionStatusRow(
+                        title: "Accessibility",
+                        granted: session.accessibilityGranted
+                    )
+                    PermissionStatusRow(
+                        title: "Input Monitoring",
+                        granted: session.inputMonitoringGranted
+                    )
+                }
+
                 if !session.permissionGranted {
-                    Button("Open System Settings") {
-                        session.requestPermissions()
+                    HStack(spacing: 16) {
+                        Button("Open System Settings") {
+                            session.requestPermissions()
+                        }
+                        .buttonStyle(.link)
+
+                        Button("Check again") {
+                            session.refreshPermissions()
+                            if !session.permissionGranted {
+                                session.startPermissionPolling()
+                                session.lastError = "If the toggles are already on, quit CleanLock with ⌘Q and reopen it from Applications."
+                            }
+                        }
+                        .buttonStyle(.link)
                     }
-                    .buttonStyle(.link)
                 }
             }
             Spacer(minLength: 0)
@@ -202,6 +231,22 @@ struct ContentView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 12)
+    }
+}
+
+private struct PermissionStatusRow: View {
+    let title: String
+    let granted: Bool
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: granted ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(granted ? Color.accentColor : .secondary)
+                .font(.caption)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(granted ? .primary : .secondary)
+        }
     }
 }
 
