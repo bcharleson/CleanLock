@@ -6,7 +6,7 @@ A tiny native macOS app that blacks out your displays and locks the keyboard + t
 
 ## Why this exists
 
-Existing tools (MacScrub, macPause, KeepClean, TapLock) already solve this well. CleanLock is intentionally smaller: one job, MIT-licensed, easy to audit, and yours to fork.
+One job: black out the display and lock input so you can sanitize your Mac without typing gibberish or clicking random things. MIT-licensed, easy to audit, and yours to fork.
 
 | Feature | Behavior |
 | --- | --- |
@@ -90,10 +90,3 @@ Emergency escapes if something goes wrong:
 - Idle auto-timeout that resets while you’re wiping
 - White / gray wipe backgrounds for seeing smudges
 - Homebrew cask
-
-## Related projects
-
-- [MacScrub](https://github.com/tufantunc/MacScrub) — polished menu-bar cleaner with configurable exit keys
-- [macPause](https://github.com/gloverola/macPause) — failsafe-first menu bar utility
-- [KeepClean](https://github.com/adhamhaithameid/keep-clean) — keyboard-only + timed modes
-- [TapLock](https://github.com/ugurcandede/taplock-app) — lock + relax modes
