@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build, sign, package, and optionally notarize CleanLock for distribution.
+# Build, sign, notarize, and Sparkle-sign CleanLock for distribution.
+# Full checklist: docs/RELEASING.md
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

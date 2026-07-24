@@ -27,10 +27,11 @@ Existing tools (MacScrub, macPause, KeepClean, TapLock) already solve this well.
 
 ### Download
 
-1. Grab the latest **`.dmg`** or **`.zip`** from [Releases](https://github.com/bcharleson/CleanLock/releases).
-2. Open the DMG and drag **CleanLock** into Applications (or unzip the `.app`).
-3. First launch: if macOS blocks it, right-click → **Open**, or allow it under **System Settings → Privacy & Security**.
-4. Grant **Accessibility** when prompted.
+1. Grab the latest **`.dmg`** from [Releases](https://github.com/bcharleson/CleanLock/releases).
+2. Open the DMG and drag **CleanLock** into Applications.
+3. Grant **Accessibility** when prompted.
+
+Releases are **Developer ID–signed and notarized** (same process as Grok). Sparkle handles later updates via **CleanLock → Check for Updates…**.
 
 ### Build from source
 
@@ -43,17 +44,17 @@ open CleanLock.xcodeproj
 
 In Xcode: select the **CleanLock** scheme → **Product → Run** (⌘R).
 
-Or package a **Developer ID–signed, notarized** Release (same `notarytool-profile` as Grok):
+### Ship a release
+
+See **[docs/RELEASING.md](docs/RELEASING.md)** for the full checklist. Short path:
 
 ```bash
+# 1) Bump MARKETING_VERSION / CURRENT_PROJECT_VERSION in project.yml
+#    and VERSION / BUILD defaults in scripts/release.sh
 ./scripts/release.sh
-# artifacts: dist/CleanLock-<version>.{dmg,zip} + appcast.xml
+# 2) Commit appcast.xml + version bump, push main
+# 3) gh release create vX.Y.Z dist/CleanLock-X.Y.Z.{dmg,zip} dist/SHA256SUMS.txt
 ```
-
-Requires the keychain profile created once via:
-`xcrun notarytool store-credentials "notarytool-profile"`.
-
-Sparkle auto-updates use `appcast.xml` on `main` and DMGs attached to GitHub Releases.
 
 ## Usage
 
