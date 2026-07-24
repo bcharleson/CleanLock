@@ -1,7 +1,7 @@
 import AppKit
 import Sparkle
 
-/// Sparkle-backed update checks — same pattern as Grok.
+/// Sparkle-backed update checks.
 final class UpdateManager: NSObject {
     static let shared = UpdateManager()
 

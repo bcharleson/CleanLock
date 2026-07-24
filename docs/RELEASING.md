@@ -1,24 +1,24 @@
 # Releasing CleanLock
 
-Same distribution model as **Grok**: Developer ID → notarize with keychain profile `notarytool-profile` → Sparkle appcast → GitHub Release.
+Pipeline: **Developer ID codesign → Apple notarization → Sparkle appcast → GitHub Release**.
 
-## One-time setup (already done on Brandon’s Mac)
+## One-time setup (maintainer machine)
 
-| Requirement | Value |
+| Requirement | Notes |
 | --- | --- |
-| Apple team | `CC989JZCNV` |
-| Codesign identity | `Developer ID Application: Brandon Charleson (CC989JZCNV)` |
-| Notary credentials | Keychain profile **`notarytool-profile`** (shared with Grok) |
-| Sparkle EdDSA key | Keychain account `ed25519` (same public key as Grok) |
-| Tools | Xcode, `xcodegen`, `scripts/bin/sign_update` |
+| Apple Developer Program membership | Individual or organization |
+| Developer ID Application certificate | Installed in login keychain |
+| Notary credentials | Keychain profile used by `notarytool` (see below) |
+| Sparkle EdDSA key | Keychain account **`cleanlock`** (private key never leaves the keychain) |
+| Tools | Xcode, [`xcodegen`](https://github.com/yonaskolb/XcodeGen), `scripts/bin/sign_update` |
 
-If notarization ever fails with “No Keychain password item”:
+### Store notarization credentials
 
 ```bash
 xcrun notarytool store-credentials "notarytool-profile" \
   --apple-id "YOUR_APPLE_ID" \
-  --team-id "CC989JZCNV"
-# follow prompts (app-specific password or API key)
+  --team-id "YOUR_TEAM_ID"
+# follow prompts (app-specific password, or use --key / --key-id / --issuer for an API key)
 ```
 
 Confirm:
@@ -27,92 +27,102 @@ Confirm:
 xcrun notarytool history --keychain-profile "notarytool-profile" | head
 ```
 
+Override profile / identity when releasing:
+
+```bash
+NOTARY_PROFILE=notarytool-profile \
+TEAM_ID=XXXXXXXXXX \
+SIGN_IDENTITY="Developer ID Application: Your Name (XXXXXXXXXX)" \
+./scripts/release.sh
+```
+
+### Sparkle signing key
+
+Private key lives only in the macOS Keychain (`account: cleanlock`).  
+**Never commit** private keys, `.p8` files, app-specific passwords, or notary API keys.
+
+Public key is embedded in the app as `SUPublicEDKey` (safe to ship; required for clients to verify updates).
+
+```bash
+# Print existing public key
+./scripts/bin/generate_keys --account cleanlock -p   # if you have generate_keys from Sparkle
+
+# Sign a DMG (release.sh does this)
+./scripts/bin/sign_update --account cleanlock dist/CleanLock-x.y.z.dmg
+```
+
 ## Release checklist
 
 ### 1. Bump version
 
-Update **both** places (keep them in sync):
+Keep these in sync:
 
-1. [`project.yml`](../project.yml) — `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION`
-2. [`scripts/release.sh`](../scripts/release.sh) — `VERSION` and `BUILD` defaults
+1. [`project.yml`](../project.yml) — `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION`
+2. [`scripts/release.sh`](../scripts/release.sh) — `VERSION`, `BUILD` defaults
 
-`BUILD` (`CFBundleVersion`) must increase every release Sparkle should offer. Marketing version can stay (e.g. `1.1.4`) only if build goes up; prefer bumping both.
+`BUILD` (`CFBundleVersion`) must increase every time Sparkle should offer an update.
 
 ### 2. Build, sign, notarize, Sparkle-sign
 
 ```bash
-cd /path/to/CleanLock
 ./scripts/release.sh
 # or: VERSION=1.1.5 BUILD=7 ./scripts/release.sh
 ```
 
-This script:
+Produces:
 
-1. Runs `xcodegen generate`
-2. Builds Release with Developer ID + hardened runtime + timestamp
-3. Creates `dist/CleanLock-<version>.zip` and `.dmg`
-4. Notarizes the zip (`notarytool-profile`), staples the `.app`
-5. Rebuilds the DMG, notarizes + staples the DMG
-6. Runs `scripts/bin/sign_update` and writes [`appcast.xml`](../appcast.xml)
-
-Artifacts:
-
-- `dist/CleanLock-<version>.dmg` — primary download (Gatekeeper-clean)
-- `dist/CleanLock-<version>.zip`
+- `dist/CleanLock-<version>.dmg` / `.zip` (notarized)
 - `dist/SHA256SUMS.txt`
-- `appcast.xml` — Sparkle feed (commit this)
+- `appcast.xml` (commit this)
 
-### 3. Verify locally
+### 3. Verify
 
 ```bash
 spctl --assess --type execute -vv build-release/Build/Products/Release/CleanLock.app
 # expect: accepted / Notarized Developer ID
 
 xcrun stapler validate dist/CleanLock-<version>.dmg
-# expect: The validate action worked!
 ```
 
 ### 4. Publish
 
 ```bash
-# Commit version bump + appcast (and any code changes)
 git add project.yml scripts/release.sh appcast.xml CleanLock/
-git commit -m "Release v1.1.5"
+git commit -m "Release vX.Y.Z"
 git push origin main
 
-# Attach binaries to GitHub (enclosure URL in appcast must match)
-gh release create "v1.1.5" \
-  dist/CleanLock-1.1.5.dmg \
-  dist/CleanLock-1.1.5.zip \
+gh release create "vX.Y.Z" \
+  dist/CleanLock-X.Y.Z.dmg \
+  dist/CleanLock-X.Y.Z.zip \
   dist/SHA256SUMS.txt \
-  --title "CleanLock 1.1.5" \
+  --title "CleanLock X.Y.Z" \
   --notes "Notarized Developer ID build."
 ```
 
-Sparkle feed URL (in Info.plist):
+Sparkle feed (Info.plist):
 
 `https://raw.githubusercontent.com/bcharleson/CleanLock/main/appcast.xml`
 
-Enclosure URL pattern:
-
-`https://github.com/bcharleson/CleanLock/releases/download/v<version>/CleanLock-<version>.dmg`
-
-**Order matters:** push `appcast.xml` to `main` and publish the GitHub Release with that exact DMG filename before users will see the update.
+Enclosure URLs must match the GitHub Release asset names exactly.
 
 ### 5. Smoke-test updates (optional)
 
-1. Install the **previous** build.
-2. Confirm **CleanLock → Check for Updates…** offers the new version.
-3. Install, relaunch, confirm version/build.
+Install the previous build → **CleanLock → Check for Updates…** → confirm the new version installs.
+
+## Secrets policy (open source)
+
+| Item | In git? |
+| --- | --- |
+| Source, MIT license, public Sparkle key, appcast signatures | Yes |
+| Apple ID / app-specific password | **No** |
+| App Store Connect API `.p8` / issuer / key id | **No** |
+| Sparkle **private** EdDSA key | **No** (Keychain only) |
+| Notary keychain profile contents | **No** (Keychain only) |
+
+Team ID and codesign identity strings in `project.yml` / `release.sh` defaults are the maintainer’s public Apple team identifiers (also visible on signed binaries). Forks should override via env vars.
 
 ## Do not
 
-- Use App Store / `Apple Distribution` for this pipeline (Direct / Developer ID only).
-- Use GoatFit’s `AuthKey_*.p8` APNs / Sign in with Apple keys for notarization — wrong key type.
-- Skip stapling; unsigned or unnotarized downloads hit Gatekeeper again.
-- Reuse an old `BUILD` number in `appcast.xml` — Sparkle will ignore the update.
-
-## Related
-
-- Grok deploy script (reference): `Documents/DeveloperProjects/xAI Grok/GrokChat/scripts/deploy-release.sh`
-- Install / usage: [README.md](../README.md)
+- Commit `.p8`, `.pem`, or Sparkle private key files
+- Skip notarization/stapling for public downloads
+- Reuse an old `BUILD` in `appcast.xml`

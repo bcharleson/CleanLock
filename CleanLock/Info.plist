@@ -39,7 +39,7 @@
 	<key>SUFeedURL</key>
 	<string>https://raw.githubusercontent.com/bcharleson/CleanLock/main/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>a+vXV7cwhCxuoSLMpuoX8e1G8O223alkm0FX+QxYHlk=</string>
+	<string>bj0mi0VsR6ATdOsChkWbYj65b4bIwVYapsaHxGWZ/Yk=</string>
 	<key>SUScheduledCheckInterval</key>
 	<integer>3600</integer>
 </dict>

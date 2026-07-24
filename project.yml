@@ -13,8 +13,8 @@ settings:
     SWIFT_VERSION: "5.9"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
     PRODUCT_BUNDLE_IDENTIFIER: com.brandoncharleson.CleanLock
-    MARKETING_VERSION: "1.1.4"
-    CURRENT_PROJECT_VERSION: "6"
+    MARKETING_VERSION: "1.1.5"
+    CURRENT_PROJECT_VERSION: "7"
     DEVELOPMENT_TEAM: CC989JZCNV
     CODE_SIGN_STYLE: Automatic
     ENABLE_HARDENED_RUNTIME: YES
@@ -58,9 +58,9 @@ targets:
         NSHumanReadableCopyright: "Copyright © 2026 Brandon Charleson. MIT License."
         # Keep Dock icon so the app is easy to launch from Spotlight / Dock.
         LSUIElement: false
-        # Sparkle (same EdDSA key as Grok — one key for all Brandon apps)
+        # Sparkle — public key only (private key stays in Keychain account "cleanlock")
         SUFeedURL: "https://raw.githubusercontent.com/bcharleson/CleanLock/main/appcast.xml"
-        SUPublicEDKey: "a+vXV7cwhCxuoSLMpuoX8e1G8O223alkm0FX+QxYHlk="
+        SUPublicEDKey: "bj0mi0VsR6ATdOsChkWbYj65b4bIwVYapsaHxGWZ/Yk="
         SUEnableAutomaticChecks: true
         SUAutomaticallyUpdate: true
         SUScheduledCheckInterval: 3600

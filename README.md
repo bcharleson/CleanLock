@@ -14,7 +14,7 @@ Existing tools (MacScrub, macPause, KeepClean, TapLock) already solve this well.
 | Input lock | Keyboard, trackpad, mouse, scroll, media keys via `CGEvent` tap |
 | Unlock | Hold ⌘ + ⌥ + ⌃ for 3 seconds (progress ring) |
 | Failsafe | Configurable auto-unlock (1 / 3 / 5 / 10 minutes) |
-| Privacy | No network, no analytics, no accounts — events never leave the device |
+| Privacy | No analytics or accounts; input events never leave the device. Optional Sparkle update checks contact GitHub only. |
 
 ## Requirements
 
@@ -31,7 +31,7 @@ Existing tools (MacScrub, macPause, KeepClean, TapLock) already solve this well.
 2. Open the DMG and drag **CleanLock** into Applications.
 3. Grant **Accessibility** when prompted.
 
-Releases are **Developer ID–signed and notarized** (same process as Grok). Sparkle handles later updates via **CleanLock → Check for Updates…**.
+Releases are **Developer ID–signed and notarized**. Sparkle handles later updates via **CleanLock → Check for Updates…**.
 
 ### Build from source
 

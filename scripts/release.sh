@@ -6,12 +6,12 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-VERSION="${VERSION:-1.1.4}"
-BUILD="${BUILD:-6}"
+VERSION="${VERSION:-1.1.5}"
+BUILD="${BUILD:-7}"
 TEAM_ID="${TEAM_ID:-CC989JZCNV}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-Developer ID Application: Brandon Charleson (CC989JZCNV)}"
-# Same keychain profile used by Grok (xcrun notarytool store-credentials "notarytool-profile")
 NOTARY_PROFILE="${NOTARY_PROFILE:-notarytool-profile}"
+SPARKLE_ACCOUNT="${SPARKLE_ACCOUNT:-cleanlock}"
 DIST="$ROOT/dist"
 APP_NAME="CleanLock"
 DERIVED="$ROOT/build-release"
@@ -98,7 +98,7 @@ fi
 if [[ -x "$SIGN_UPDATE" ]]; then
   echo "==> Sparkle-signing DMG"
   # shellcheck disable=SC2034
-  SPARKLE_OUT="$("$SIGN_UPDATE" "$DMG")"
+  SPARKLE_OUT="$("$SIGN_UPDATE" --account "$SPARKLE_ACCOUNT" "$DMG")"
   echo "$SPARKLE_OUT"
   ED_SIGNATURE="$(printf '%s\n' "$SPARKLE_OUT" | sed -n 's/.*sparkle:edSignature="\([^"]*\)".*/\1/p' | head -1)"
   LENGTH="$(printf '%s\n' "$SPARKLE_OUT" | sed -n 's/.*length="\([^"]*\)".*/\1/p' | head -1)"
