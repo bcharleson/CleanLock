@@ -32,5 +32,15 @@
 	<string>Copyright © 2026 Brandon Charleson. MIT License.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/bcharleson/CleanLock/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>a+vXV7cwhCxuoSLMpuoX8e1G8O223alkm0FX+QxYHlk=</string>
+	<key>SUScheduledCheckInterval</key>
+	<integer>3600</integer>
 </dict>
 </plist>

@@ -43,12 +43,17 @@ open CleanLock.xcodeproj
 
 In Xcode: select the **CleanLock** scheme → **Product → Run** (⌘R).
 
-Or package a signed Release build:
+Or package a **Developer ID–signed, notarized** Release (same `notarytool-profile` as Grok):
 
 ```bash
 ./scripts/release.sh
-# artifacts land in dist/CleanLock-1.1.1.{dmg,zip}
+# artifacts: dist/CleanLock-<version>.{dmg,zip} + appcast.xml
 ```
+
+Requires the keychain profile created once via:
+`xcrun notarytool store-credentials "notarytool-profile"`.
+
+Sparkle auto-updates use `appcast.xml` on `main` and DMGs attached to GitHub Releases.
 
 ## Usage
 
@@ -83,7 +88,7 @@ Emergency escapes if something goes wrong:
 - Menu-bar-only mode (`LSUIElement`)
 - Idle auto-timeout that resets while you’re wiping
 - White / gray wipe backgrounds for seeing smudges
-- Notarized releases + Homebrew cask
+- Homebrew cask
 
 ## Related projects
 

@@ -30,3 +30,8 @@ build/
 *.dmg
 *.app.zip
 *.app
+
+# Keep Sparkle tooling; never commit private keys
+sparkle-private-key*
+*.pem
+!scripts/bin/sign_update

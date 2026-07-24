@@ -4,13 +4,18 @@ options:
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.5.0"
 settings:
   base:
     SWIFT_VERSION: "5.9"
     MACOSX_DEPLOYMENT_TARGET: "14.0"
     PRODUCT_BUNDLE_IDENTIFIER: com.brandoncharleson.CleanLock
-    MARKETING_VERSION: "1.1.3"
-    CURRENT_PROJECT_VERSION: "5"
+    MARKETING_VERSION: "1.1.4"
+    CURRENT_PROJECT_VERSION: "6"
+    DEVELOPMENT_TEAM: CC989JZCNV
     CODE_SIGN_STYLE: Automatic
     ENABLE_HARDENED_RUNTIME: YES
     COMBINE_HIDPI_IMAGES: YES
@@ -22,6 +27,9 @@ targets:
       - path: CleanLock
         excludes:
           - "**/*.md"
+    dependencies:
+      - package: Sparkle
+        product: Sparkle
     settings:
       base:
         INFOPLIST_FILE: CleanLock/Info.plist
@@ -50,3 +58,9 @@ targets:
         NSHumanReadableCopyright: "Copyright © 2026 Brandon Charleson. MIT License."
         # Keep Dock icon so the app is easy to launch from Spotlight / Dock.
         LSUIElement: false
+        # Sparkle (same EdDSA key as Grok — one key for all Brandon apps)
+        SUFeedURL: "https://raw.githubusercontent.com/bcharleson/CleanLock/main/appcast.xml"
+        SUPublicEDKey: "a+vXV7cwhCxuoSLMpuoX8e1G8O223alkm0FX+QxYHlk="
+        SUEnableAutomaticChecks: true
+        SUAutomaticallyUpdate: true
+        SUScheduledCheckInterval: 3600

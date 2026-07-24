@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <channel>
+    <title>CleanLock</title>
+    <link>https://github.com/bcharleson/CleanLock</link>
+    <description>CleanLock updates</description>
+    <language>en</language>
+    <item>
+      <title>Version 1.1.4</title>
+      <pubDate>Fri, 24 Jul 2026 11:57:53 +0000</pubDate>
+      <sparkle:version>6</sparkle:version>
+      <sparkle:shortVersionString>1.1.4</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+      <enclosure
+        url="https://github.com/bcharleson/CleanLock/releases/download/v1.1.4/CleanLock-1.1.4.dmg"
+        length="2960692"
+        type="application/octet-stream"
+        sparkle:edSignature="rljjYZdx0vQ7oAxxfm143aSv8OwaA6GEWuQKV4xDbFU9TQN64BKps5M/G0ithWMuzMxKTZLZ4Kpbvyy0cz+JBg==" />
+    </item>
+  </channel>
+</rss>
